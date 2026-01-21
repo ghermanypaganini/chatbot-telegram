@@ -1,0 +1,278 @@
+{
+  "name": "Desafio Prático Fase 2",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -336,
+        -32
+      ],
+      "id": "22aed14c-cea9-4811-914d-4f8a59982ecd",
+      "name": "Telegram Trigger",
+      "webhookId": "ae392b71-6ed7-4e7f-a590-82f847683d40",
+      "credentials": {
+        "telegramApi": {
+          "id": "J4vgensnjL1PMF17",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "ce056800-dfe7-4965-9cb4-d14f33f52564",
+              "name": "queue",
+              "value": "={{ \n  $json.message.text\n    .normalize(\"NFD\")\n    .replace(/[\\u0300-\\u036f]/g, \"\")\n    .toLowerCase()\n    .trim()\n}}\n",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -128,
+        -32
+      ],
+      "id": "fdfd317a-28d7-42c9-97f3-add8a855470d",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "url": "https://api.openweathermap.org/data/2.5/weather",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openWeatherMapApi",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "q",
+              "value": "={{$json.queue}}"
+            },
+            {
+              "name": "units",
+              "value": "metric"
+            },
+            {
+              "name": "lang",
+              "value": "pt_br"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        80,
+        -32
+      ],
+      "id": "0e5dfe6e-b0d6-4a6c-8b9a-40da318cfb49",
+      "name": "HTTP Request",
+      "credentials": {
+        "openWeatherMapApi": {
+          "id": "QXm9Ou3p4ojCAzoU",
+          "name": "OpenWeatherMap account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "26470824-7701-49c8-89bd-b4f58dd4b36b",
+              "leftValue": "={{ $json.cod }}",
+              "rightValue": 200,
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "d95bb038-06e9-40b1-b65f-6c672d188752",
+              "leftValue": "={{ $json.main.temp }}",
+              "rightValue": "",
+              "operator": {
+                "type": "number",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        288,
+        -32
+      ],
+      "id": "c9204c4c-c36c-4b05-9017-a5d031ec63c2",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "e9c67b8e-41a1-43ab-a216-098b93dff266",
+              "name": "message",
+              "value": "=A temperatura em {{ $json.name }} é de {{ Math.round($json.main.temp) }}°C com {{ $json.weather[0].description }}.\n",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        496,
+        -128
+      ],
+      "id": "28540caa-abba-476a-be42-f7e672a6e44f",
+      "name": "Edit Fields1"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "={{ $json.message }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        704,
+        -128
+      ],
+      "id": "65ba9f6e-e284-4454-96ea-6660cad20c96",
+      "name": "Send a text message",
+      "webhookId": "fd8b554d-2552-485e-b36e-2a7acd0ba195",
+      "credentials": {
+        "telegramApi": {
+          "id": "J4vgensnjL1PMF17",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "Cidade não encontrada. Digite a cidade correta e o estado conforme exemplo: Arroio Trinta, SC.",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        496,
+        64
+      ],
+      "id": "4800e47c-15a5-43fb-9538-b248c7c4688e",
+      "name": "Send a text message1",
+      "webhookId": "2242de47-4cdf-433a-893d-4e923ce70b39",
+      "credentials": {
+        "telegramApi": {
+          "id": "J4vgensnjL1PMF17",
+          "name": "Telegram account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send a text message1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields1": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "versionId": "664ed577-b50c-47f6-b63b-6742983bc700",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "9c68438c0dcb35efc571c82b5d09cd7917c071babfd744ce05d9612f41756726"
+  },
+  "id": "9krezeQjxQ8GoIpCbd205",
+  "tags": []
+}
